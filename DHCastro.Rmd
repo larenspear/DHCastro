@@ -6,7 +6,7 @@ output: html_notebook
 
 ```{r}
 
-
+Castro_Speeches <- read.
 
 ```
 
