@@ -11,17 +11,41 @@ library(readr)
 Stopwords_NLTK <- c("i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now")
 
 Get_Date <- function(filename){
-  year <- filename[1:4]
-  month <- filename[6:7]
-  day <- filename[11:12]
+  year <- substr(filename, 1, 4)
+  month <- substr(filename, 6, 7)
+  day <- substr(filename, 11, 12)
   iteration <- 0
-  if (filename[13] == "-") {
-    iteration <- filename[14]
+  if (grepl(filename, "-")) {
+    iteration <- substr(filename, 14,14)
   }
 }
 Get_Text <- function(filename){}
 
 Clean_Text <- function(speechtext){}
+
+```
+
+Each speech file is formatted as "1959_01ja_03.txt" for example. The first four characters make up the year, then 2 corresponding to the month and the first two letters of the month, then the date of that month, then -1,2, etc. if there is more than one speech on that day. A few speeches had no known date and were excluded.
+
+```{r}
+path <- "/Users/larenspear/Documents/GitHub/DHCastro/TextCollection"
+file.names <- dir(path, pattern = ".txt")
+
+text_collection =  data.frame("ID" = c(), "Year" = c(), "Month" = c(), "Day" = c(), "Iteration" = c())
+year <- month <- day <- iteration <- ID <- c()
+
+for(i in 1:length(file.names)){
+  ID[i] <- i
+  year[i] <- substr(file.names[i], 1, 4)
+  month[i] <- substr(file.names[i], 6, 7)
+  day[i] <- substr(file.names[i], 11, 12)
+  iteration[i] <- 0
+  if (grepl(file.names[i], "-")) {
+    iteration[i] <- substr(file.names[i], 14, 14)
+  }
+}
+
+text_info =  data.frame("ID" = ID, "Year" = year, "Month" = month, "Day" = day, "Iteration" = iteration)
 
 ```
 
