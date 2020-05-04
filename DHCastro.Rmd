@@ -31,21 +31,22 @@ Each speech file is formatted as "1959_01ja_03.txt" for example. The first four 
 path <- "/Users/larenspear/Documents/GitHub/DHCastro/TextCollection"
 file.names <- dir(path, pattern = ".txt")
 
-text_collection =  data.frame("ID" = c(), "Year" = c(), "Month" = c(), "Day" = c(), "Iteration" = c())
-year <- month <- day <- iteration <- ID <- c()
+text_collection =  data.frame("ID" = c(), "Year" = c(), "Month" = c(), "Day" = c(), "NumSpeech" = c())
+year <- month <- day <- NumSpeech <- ID <- c()
 
 for(i in 1:length(file.names)){
   ID[i] <- i
   year[i] <- substr(file.names[i], 1, 4)
   month[i] <- substr(file.names[i], 6, 7)
   day[i] <- substr(file.names[i], 11, 12)
-  iteration[i] <- 0
-  if (grepl(file.names[i], "-")) {
-    iteration[i] <- substr(file.names[i], 14, 14)
+  NumSpeech[i] <- 0
+  if (grepl("-",file.names[i])) {
+    NumSpeechInt <- regexpr("[-.+/.]",file.names[i])
+    NumSpeech <- regmatches(file.names[i], NumSpeechInt)
   }
 }
 
-text_info =  data.frame("ID" = ID, "Year" = year, "Month" = month, "Day" = day, "Iteration" = iteration)
+text_info =  data.frame("ID" = ID, "Year" = year, "Month" = month, "Day" = day, "NumSpeech" = NumSpeech)
 
 ```
 
