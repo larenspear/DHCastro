@@ -7,6 +7,8 @@ General global variables, methods, libraries
 ```{r}
 
 library(readr)
+library(tm)
+library(qdap)
 
 Stopwords_NLTK <- c("i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now")
 
@@ -25,28 +27,133 @@ Clean_Text <- function(speechtext){}
 
 ```
 
-Each speech file is formatted as "1959_01ja_03.txt" for example. The first four characters make up the year, then 2 corresponding to the month and the first two letters of the month, then the date of that month, then -1,2, etc. if there is more than one speech on that day. A few speeches had no known date and were excluded.
+Each speech file is formatted as "1959_01ja_03.txt" for example. The first four characters make up the year, then 2 corresponding to the month and the first two letters of the month, then the date of that month, then -1,-2, etc. if there is more than one speech on that day. Six speeches had no known date and were excluded.
+
+The length of the speech was recorded.
 
 ```{r}
 path <- "/Users/larenspear/Documents/GitHub/DHCastro/TextCollection"
 file.names <- dir(path, pattern = ".txt")
 
 text_collection =  data.frame("ID" = c(), "Year" = c(), "Month" = c(), "Day" = c(), "NumSpeech" = c())
-year <- month <- day <- NumSpeech <- ID <- c()
+year <- month <- day <- NumSpeech <- ID <- SpeechLength <- SpeechText <- c()
 
-for(i in 1:length(file.names)){
+for(i in 1:length(file.names)){ #Get info from filename
   ID[i] <- i
   year[i] <- substr(file.names[i], 1, 4)
   month[i] <- substr(file.names[i], 6, 7)
   day[i] <- substr(file.names[i], 11, 12)
   NumSpeech[i] <- 0
   if (grepl("-",file.names[i])) {
-    NumSpeechInt <- regexpr("[-.+/.]",file.names[i])
-    NumSpeech <- regmatches(file.names[i], NumSpeechInt)
+    NumSpeech[i] <-as.numeric(substr(file.names[i],14,15)) #Max 16 speeches in one day
   }
+  import_text <- read_file(paste(path,file.names[i],sep="/"))
+  Wordlist <- strsplit(import_text, " ", fixed = T)
+  Words <- table(data.frame(Wordlist))
+  Words <- rm_stopwords(Words)
+  SpeechLength[i] <- length(Words)
 }
 
-text_info =  data.frame("ID" = ID, "Year" = year, "Month" = month, "Day" = day, "NumSpeech" = NumSpeech)
+text_info =  data.frame("ID" = ID, "Year" = year, "Month" = month, "Day" = day, "NumSpeech" = NumSpeech, "WordCount" = SpeechLength)
+
+```
+
+Then I collected the words from the speeches and removed all the stopwords.
+
+Plots
+
+```{r}
+Years <- as.numeric(text_info$Year)
+hist(Years,main="Speech Frequency per Year",xlab="Years Castro in Power",breaks = 30,xlim=c(0,39))
+
+hist(text_info$WordCount,main="Length of Speeches")
+quantile(text_info$WordCount)
+hist(text_info$WordCount,main="Length of Speeches",xlim=c(0,2000),breaks=100,xlab="Word Count")
+hist(text_info$WordCount,main="Length of Speeches",xlim=c(2000,10000),breaks=100,ylim=c(0,50),xlab="Word Count")
+
+plot(Years,text_info$WordCount,ylim=c(0,2000),ylab="Length of Speech",main="Length of Castro's Speeches Over Time")
+abline(lm(Years ~ text_info$WordCount))
+```
+
+```{r}
+
+for(i in 1:length(file.names)){ #Get info from filename{
+  import_text <- read_file(paste(path,file.names[i],sep="/"))
+  Wordlist <- strsplit(import_text, " ", fixed = T)
+  revolution_occurrences <- length(grep("revolution", unlist(Wordlist),ignore.case=TRUE))
+  text_info$revolution_uses[i] <- revolution_occurrences
+}
+
+```
+
+```{r}
+plot(Years, text_info$revolution_uses,ylab = "Occurrences of Revolution",main = "Castro's Usage of Revolution")
+abline(lm(Years ~ text_info$revolution_uses))
+hist(text_info$revolution_uses)
+quantile(text_info$revolution_uses)
+quantile(text_info$revolution_uses,c(0.8,0.9,0.95,0.98))
+
+hist(text_info$revolution_uses,xlim=c(60,350),ylim=c(0,50),breaks=40)
+
+revolution_mentioned <- length(which(text_info$revolution_uses != 0))
+revolution_percent <- revolution_mentioned / length(text_info$revolution_uses)
+total_revolution <- sum(text_info$revolution_uses)
+print(total_revolution)
+print(revolution_percent)
+
+```
+
+```{r}
+
+for(i in 1:length(file.names)){ #Get info from filename
+  import_text <- read_file(paste(path,file.names[i],sep="/"))
+  Wordlist <- strsplit(import_text, " ", fixed = T)
+  communism_occurrences <- length(grep(("communis"), unlist(Wordlist),ignore.case=TRUE))
+  text_info$communism_uses[i] <- communism_occurrences
+  democracy_occurrences <- length(grep(("democr"), unlist(Wordlist),ignore.case=TRUE))
+  text_info$democracy_uses[i] <- democracy_occurrences
+  }
+
+```
+```{r}
+
+for(i in 1:length(file.names)){ #Get info from filename
+  import_text <- read_file(paste(path,file.names[i],sep="/"))
+  Wordlist <- strsplit(import_text, " ", fixed = T)
+  marti_occurrences <- length(grep(("Marti"), unlist(Wordlist),ignore.case=TRUE))
+  text_info$marti_uses[i] <- marti_occurrences
+}
+
+marti_mentioned <- length(which(text_info$marti_uses != 0))
+marti_percent <- marti_mentioned / length(text_info$marti_uses)
+total_marti <- sum(text_info$marti_uses)
+print(total_marti)
+print(marti_percent)
+
+plot(Years, text_info$marti_uses,ylab = "Occurrences of Martí",main = "Castro's Uses of Martí")
+abline(lm(Years ~ text_info$marti_uses))
+hist(text_info$marti_uses)
+quantile(text_info$marti_uses)
+quantile(text_info$marti_uses,c(0.8,0.9,0.95,0.98))
+
+```
+
+```{r}
+
+for(i in 1:length(file.names)){ #Get info from filename
+  import_text <- read_file(paste(path,file.names[i],sep="/"))
+  Wordlist <- strsplit(import_text, " ", fixed = T)
+  cuba_occurrences <- length(grep(("cuba"), unlist(Wordlist),ignore.case=TRUE))
+  america_occurrences <- length(grep(("america"), unlist(Wordlist),ignore.case=TRUE))
+  text_info$america_uses[i] <- america_occurrences
+  text_info$cuba_uses[i] <- cuba_occurrences
+}
+
+plot(Years, text_info$cuba_uses,ylab = "Occurrences of Cuba",main = "Castro's Uses of Cuba")
+abline(lm(Years ~ text_info$cuba_uses))
+hist(text_info$cuba_uses)
+quantile(text_info$cuba_uses)
+quantile(text_info$cuba_uses,c(0.8,0.9,0.95,0.98))
 
 ```
 
